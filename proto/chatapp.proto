@@ -1,0 +1,15 @@
+syntax = "proto3";
+package chatapp;
+import "google/protobuf/empty.proto";
+option go_package="./proto";
+
+
+message Message {
+  string user = 1;
+  string text = 2;
+}
+
+service ChatappService {
+  rpc SendMessage(Message) returns (google.protobuf.Empty);
+  rpc ReceiveMessage(stream Message) returns (stream Message);
+}
