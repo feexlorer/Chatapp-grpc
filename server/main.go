@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strings"
 	"sync"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -60,9 +61,29 @@ func (s *server) ReceiveMessage(stream pb.ChatappService_ReceiveMessageServer) e
 			return err
 		}
 		fmt.Printf("%s: %s\n", msg.User, msg.Text)
-		_, err = s.SendMessage(stream.Context(), msg)
-		if err != nil {
-			log.Printf("Failed to send message: %v", err)
+
+		// Check if the message is a "userinfo" command
+		if msg.Text == "userinfo" {
+			s.mu.Lock()
+			users := make([]string, 0, len(s.clients))
+			for user := range s.clients {
+				users = append(users, user)
+			}
+			s.mu.Unlock()
+
+			userInfoMsg := &pb.Message{
+				User: "server",
+				Text: "Current users: " + strings.Join(users, ", "),
+			}
+
+			if err := stream.Send(userInfoMsg); err != nil {
+				log.Printf("Failed to send userinfo message: %v", err)
+			}
+		} else {
+			_, err = s.SendMessage(stream.Context(), msg)
+			if err != nil {
+				log.Printf("Failed to send message: %v", err)
+			}
 		}
 	}
 }
