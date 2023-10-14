@@ -28,13 +28,11 @@ func (s *server) SendMessage(ctx context.Context, in *pb.Message) (*empty.Empty,
 	fmt.Printf("%s: %s\n", in.User, in.Text)
 	var lastError error
 	for user, client := range s.clients {
-		if user != in.User {
-			err := client.Send(in)
-			if err != nil {
-				lastError = err
-				delete(s.clients, user) // Remove the disconnected client
-				continue                // Continue with the next client
-			}
+		err := client.Send(in)
+		if err != nil {
+			lastError = err
+			delete(s.clients, user) // Remove the disconnected client
+			continue                // Continue with the next client
 		}
 	}
 	return &emptypb.Empty{}, lastError
